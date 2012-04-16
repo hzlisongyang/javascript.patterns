@@ -14,12 +14,12 @@ JavaScript默认语法并不支持命名空间，但很容易可以实现此特�
 
 看如下例子：
 
-		// BEFORE: 5 globals
-		// Warning: antipattern
-		// constructors function Parent() {} function Child() {}
-		// a variable
-		var some_var = 1;
-		// some objects
-		var module1 = {}; module1.data = {a: 1, b: 2}; var module2 = {};
+	// BEFORE: 5 globals
+	// Warning: antipattern
+	// constructors function Parent() {} function Child() {}
+	// a variable
+	var some_var = 1;
+	// some objects
+	var module1 = {}; module1.data = {a: 1, b: 2}; var module2 = {};
 
 
