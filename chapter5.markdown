@@ -16,22 +16,37 @@ JavaScript默认语法并不支持命名空间，但很容易可以实现此特�
 
 	// BEFORE: 5 globals
 	// Warning: antipattern
-	// constructors function Parent() {} function Child() {}
+	// constructors 
+	function Parent() {} 
+	function Child() {}
 	// a variable
 	var some_var = 1;
+
 	// some objects
-	var module1 = {}; module1.data = {a: 1, b: 2}; var module2 = {};
+	var module1 = {}; 
+	module1.data = {a: 1, b: 2}; 
+	var module2 = {};
 
 可以通过创建一个全局对象（通常代表应用名）来重构上述这类代码，比方说， MYAPP，然后将上述例子中的函数和变量都变为该全局对象的属性：
 
 	// AFTER: 1 global
-	// global object var MYAPP = {};
+	// global object 
+	var MYAPP = {};
+
 	// constructors
-	MYAPP.Parent = function () {}; MYAPP.Child = function () {};
-	// a variable MYAPP.some_var = 1;
-	// an object container MYAPP.modules = {};
+	MYAPP.Parent = function () {}; 
+	MYAPP.Child = function () {};
+
+	// a variable 
+	MYAPP.some_var = 1;
+
+	// an object container 
+	MYAPP.modules = {};
+
 	// nested objects
-	MYAPP.modules.module1 = {}; MYAPP.modules.module1.data = {a: 1, b: 2}; MYAPP.modules.module2 = {};
+	MYAPP.modules.module1 = {}; 
+	MYAPP.modules.module1.data = {a: 1, b: 2}; 
+	MYAPP.modules.module2 = {};
 
 这里的MYAPP就是命名空间对象，对象名可以随便取，可以是应用名、类库名、域名或者是公司名都可以。开发者经常约定全局变量都采用大写（所有字母都大写），这样可以显得比较突出（不过，要记住，一般大写的变量都用于表示常量）。
 
@@ -42,5 +57,71 @@ JavaScript默认语法并不支持命名空间，但很容易可以实现此特�
 * 命名的深度嵌套会减慢属性值的查询
 
 本章后续要介绍的沙箱模式则可以避免这些缺点。
+
+
+###通用命名空间函数
+
+随着程序复杂度的提高，代码会分置在不同的文件中以特定顺序来加载，这样一来，就不能保证你的代码一定是第一个申明命名空间或者改变量下的属性的。甚至还会发生属性覆盖的问题。所以，在创建命名空间或者添加属性的时候，最好先检查下是否存在，如下所示：
+
+	// unsafe
+	var MYAPP = {};
+	// better
+	if (typeof MYAPP === "undefined") {
+		var MYAPP = {}; 
+	}
+	// or shorter
+	var MYAPP = MYAPP || {};
+
+如上所示，不难看出，如果每次做类似操作都要这样检查一下就会有很多重复性的代码。比方说，要申明**MYAPP.modules.module2**，就要重复三次这样的检查。所以，我们需要一个重用的**namespace()**函数来专门处理这些检查工作，然后用它来创建命名空间，如下所示：
+
+	// using a namespace function
+	MYAPP.namespace('MYAPP.modules.module2');
+
+	// equivalent to:
+	// var MYAPP = {
+	//	modules: {
+	//		module2: {}
+	//	}
+	// };
+
+下面是上述namespace函数的实现案例。这种实现是无损的，意味着如果要创建的命名空间已经存在，则不会再重复创建：
+
+	var MYAPP = MYAPP || {};
+	MYAPP.namespace = function (ns_string) { 
+		var parts = ns_string.split('.'),
+			parent = MYAPP, 
+			i;
+
+		// strip redundant leading global 
+		if (parts[0] === "MYAPP") {
+			parts = parts.slice(1); 
+		}
+
+		for (i = 0; i < parts.length; i += 1) {
+			// create a property if it doesn't exist
+			if (typeof parent[parts[i]] === "undefined") {
+				parent[parts[i]] = {}; 
+			}
+			parent = parent[parts[i]];
+		}
+		return parent;
+	};
+
+上述实现支持如下使用：
+
+	// assign returned value to a local var
+	var module2 = MYAPP.namespace('MYAPP.modules.module2'); 
+	module2 === MYAPP.modules.module2; // true
+
+	// skip initial `MYAPP` 
+	MYAPP.namespace('modules.module51');
+
+	// long namespace 
+	MYAPP.namespace('once.upon.a.time.there.was.this.long.nested.property');
+
+图5-1 展示了上述代码创建的命名空间对象在Firebug下的可视结果
+
+![图片](test.png)
+
 
 
